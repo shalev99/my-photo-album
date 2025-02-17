@@ -1,16 +1,33 @@
-public class PictureService
+using PictureAlbum.API.Models;
+using PictureAlbum.API.Repositories;
+
+public class FileService
 {
-    private readonly PictureRepository _repository;
-    public PictureService(PictureRepository repository) { _repository = repository; }
+    private readonly FileRepository _repository;
 
-    public async Task<List<Picture>> GetPicturesAsync() => await _repository.GetAllAsync();
+    // Constructor
+    public FileService(FileRepository repository) 
+    { 
+        _repository = repository; 
+    }
 
-    public async Task<(bool Success, string Message, int Id)> AddPictureAsync(Picture picture)
+    // Get a list of all files
+    public async Task<List<FileEntity>> GetFilesAsync() 
     {
-        if (await _repository.GetByNameAsync(picture.Name) != null)
-            return (false, "Picture name already exists", 0);
+        return await _repository.GetAllAsync();
+    }
 
-        int id = await _repository.AddAsync(picture);
+    // Add a file to the database
+    public async Task<(bool Success, string Message, int Id)> AddFileAsync(FileEntity fileEntity)
+    {
+        // Check if a file with the same name already exists
+        if (await _repository.GetByNameAsync(fileEntity.Name) != null)
+        {
+            return (false, "File name already exists", 0);
+        }
+
+        // Add file to the repository and return success message with the new file ID
+        int id = await _repository.AddAsync(fileEntity);
         return (true, "Success", id);
     }
 }

@@ -1,12 +1,18 @@
+// ApplicationDbContext.cs
 using Microsoft.EntityFrameworkCore;
+using PictureAlbum.API.Models;
 
-public class AppDbContext : DbContext
+namespace PictureAlbum.API.Data 
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-    public DbSet<Picture> Pictures { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class ApplicationDbContext : DbContext
     {
-        modelBuilder.Entity<Picture>().HasIndex(p => p.Name).IsUnique();
+        // Constructor accepting DbContextOptions and passing them to the base class
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+
+        // DbSet for FileEntity
+        public DbSet<FileEntity> Files { get; set; }
     }
 }
