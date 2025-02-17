@@ -2,17 +2,22 @@ import React from 'react';
 
 import { usefilesStore } from '../store/usefilesStore';
 import FileForm from '../components/fileForm';
+import { useEffect } from 'react';
 
 const HomePage = () => {
-    const { pictures, fetchPictures } = usefilesStore();
-    
+    const { files: files, fetchfiles: fetchfiles } = usefilesStore();
+    useEffect(() => {
+        fetchfiles();  
+      }, []);
     return (
         <div>
-            <h1>Picture Album</h1>
+            <h1>Album:</h1>
             <FileForm/>
             <ul>
-                {pictures.map(p => <li key={p.id}>{p.name}</li>)}
+                {files.map(p => <li key={p.id}>{p.name}</li>)}
             </ul>
         </div>
     );
 };
+
+export default HomePage;

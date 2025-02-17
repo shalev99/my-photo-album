@@ -6,14 +6,14 @@ interface Files {
 }
 
 interface filesStore {
-    pictures: Files[];
-    fetchPictures: () => Promise<void>;
+    files: Files[];
+    fetchfiles: () => Promise<void>;
 }
 
 export const usefilesStore = create<filesStore>((set) => ({
-    pictures: [],
-    fetchPictures: async () => {
-        const res = await fetch('/api/files');
-        set({ pictures: await res.json() });
+    files: [],
+    fetchfiles: async () => {
+        const res = await fetch('http://localhost:7061/api/files');
+        set({ files: await res.json() });
     }
 }));
