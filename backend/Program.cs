@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Http;
 using PictureAlbum.API.Data;
 using PictureAlbum.API.Models;
 using System.IO;
+
 Console.WriteLine("Reached this part of the code");
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
@@ -12,10 +14,30 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Add services for controllers (you'll need a controller for your API)
+// Add services for controllers
 builder.Services.AddControllers();
 
+// Define CORS policy
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
+// Configure CORS to allow requests from the frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          // Allow both frontend origins (React and potential other origin)
+                          policy.WithOrigins("http://localhost:3000", "http://localhost:5162") // Frontend URLs
+                                .AllowAnyMethod()
+                                .AllowAnyHeader()
+                                .AllowCredentials();  // Allow credentials if needed
+                      });
+});
+
 var app = builder.Build();
+
+// Enable CORS middleware
+app.UseCors(MyAllowSpecificOrigins); 
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
@@ -40,31 +62,43 @@ app.MapPost("/api/files", async (IFormFile file, string description, Application
         Directory.CreateDirectory(uploadDirectory);
     }
 
-    var filePath = Path.Combine(uploadDirectory, file.FileName);
+    // Generate a unique file name to avoid conflicts
+    var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+    var filePath = Path.Combine(uploadDirectory, uniqueFileName);
 
-    // Save the file to the server
-    using (var stream = new FileStream(filePath, FileMode.Create))
+    try
     {
-        await file.CopyToAsync(stream);
+        // Save the file to the server
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Save file information to the database
+        var fileEntity = new FileEntity
+        {
+            Name = file.FileName,  // Original file name
+            FileName = uniqueFileName,  // Unique file name saved on server
+            FileType = file.ContentType,  // The type of the file (e.g., "image/jpeg")
+            FileSize = file.Length,  // The size of the file in bytes
+            Description = description,  // Optional description provided by the user
+            UploadDate = DateTime.Now  // The date and time when the picture was uploaded
+        };
+
+        // Add the file information to the database
+        dbContext.Files.Add(fileEntity);
+        await dbContext.SaveChangesAsync();
+
+        // Return a response with file details (ID and name)
+        return Results.Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName });
     }
-
-    // Save file information to the database
-    var fileEntity = new FileEntity
+    catch (Exception ex)
     {
-        Name = file.FileName,  // Name of the picture (e.g., "sunset.jpg")
-        FileName = file.FileName,  // The actual file name (e.g., "sunset.jpg")
-        FileType = file.ContentType,  // The type of the file (e.g., "image/jpeg")
-        FileSize = file.Length,  // The size of the file in bytes
-        Description = description,  // Optional description provided by the user
-        UploadDate = DateTime.Now  // The date and time when the picture was uploaded
-    };
-
-
-    dbContext.Files.Add(fileEntity);
-    await dbContext.SaveChangesAsync();
-
-    return Results.Ok(new { fileEntity.Id, fileEntity.Name });
+        // Return an internal server error if something goes wrong
+        return Results.Problem(detail: ex.Message, statusCode: 500);
+    }
 });
+
 
 // Add a route to get all files
 app.MapGet("/api/files", async (ApplicationDbContext dbContext) =>
@@ -73,4 +107,5 @@ app.MapGet("/api/files", async (ApplicationDbContext dbContext) =>
     return Results.Ok(files);
 });
 
+// Run the application
 app.Run();
