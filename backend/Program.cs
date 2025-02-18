@@ -48,11 +48,25 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Add a route to upload files
-app.MapPost("/api/files", async (IFormFile file, string description, ApplicationDbContext dbContext) =>
+app.MapPost("/api/files", async (HttpContext httpContext, ApplicationDbContext dbContext) =>
 {
+    var form = await httpContext.Request.ReadFormAsync();
+    var file = form.Files["pictureFile"];
+    var name = form["pictureName"];
+    var date = form["pictureDate"];
+    var description = form["pictureDescription"];
+
     if (file == null || file.Length == 0)
     {
         return Results.BadRequest("No file uploaded.");
+    }
+
+    // Read file content into a byte array
+    byte[] fileContent;
+    using (var memoryStream = new MemoryStream())
+    {
+        await file.CopyToAsync(memoryStream);
+        fileContent = memoryStream.ToArray();
     }
 
     // Ensure directory exists to save files
@@ -62,42 +76,39 @@ app.MapPost("/api/files", async (IFormFile file, string description, Application
         Directory.CreateDirectory(uploadDirectory);
     }
 
-    // Generate a unique file name to avoid conflicts
+    // Generate a unique file name
     var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
     var filePath = Path.Combine(uploadDirectory, uniqueFileName);
 
     try
     {
-        // Save the file to the server
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
+        // Save file to server
+        await File.WriteAllBytesAsync(filePath, fileContent);
 
-        // Save file information to the database
+        // Save file info to DB
         var fileEntity = new FileEntity
         {
-            Name = file.FileName,  // Original file name
-            FileName = uniqueFileName,  // Unique file name saved on server
-            FileType = file.ContentType,  // The type of the file (e.g., "image/jpeg")
-            FileSize = file.Length,  // The size of the file in bytes
-            Description = description,  // Optional description provided by the user
-            UploadDate = DateTime.Now  // The date and time when the picture was uploaded
+            Name = name,
+            FileName = uniqueFileName,
+            FileType = file.ContentType,
+            FileSize = file.Length,
+            FileContent = fileContent, // ✅ Storing the file content in the database
+            Description = description,
+            UploadDate = DateTime.TryParse(date, out var parsedDate) ? parsedDate : DateTime.UtcNow // ✅ Handling date parsing
         };
 
-        // Add the file information to the database
         dbContext.Files.Add(fileEntity);
         await dbContext.SaveChangesAsync();
 
-        // Return a response with file details (ID and name)
         return Results.Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName });
     }
     catch (Exception ex)
     {
-        // Return an internal server error if something goes wrong
         return Results.Problem(detail: ex.Message, statusCode: 500);
     }
-});
+})
+.DisableAntiforgery();
+
 
 
 // Add a route to get all files
