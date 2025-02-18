@@ -36,4 +36,3 @@ export const usefilesStore = create<filesStore>((set) => ({
         }
     }
 }));
-

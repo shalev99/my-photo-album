@@ -28,7 +28,7 @@ const FileForm = () => {
         formData.append('pictureFile', pictureFile); // pictureFile is a File type
 
         // Send data to the server
-        fetch('https://localhost:7061/api/files', {
+        fetch('https://localhost:7061/api/files/upload', {
             method: 'POST',
             body: formData,
         })
