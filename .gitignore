@@ -1,0 +1,7 @@
+# Ignore build directories
+/bin/
+/obj/
+
+# Ignore DLLs generated in the Debug/Release folders
+*.dll
+
