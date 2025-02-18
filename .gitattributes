@@ -1,2 +1,11 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+appsettings.Development.json
+appsettings.json
+# Ignore build directories
+/bin/
+/obj/
+
+# Ignore DLLs generated in the Debug/Release folders
+*.dll
+
