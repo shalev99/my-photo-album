@@ -1,49 +1,75 @@
 using Microsoft.AspNetCore.Http;
-using PictureAlbum.API.Data;  // Correct namespace for ApplicationDbContext
+using Microsoft.EntityFrameworkCore;
+using PictureAlbum.API.Data;
 using PictureAlbum.API.Models;
-using Microsoft.EntityFrameworkCore;  // This is necessary for ToListAsync
+using System;
 using System.IO;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
-public class FileService
+namespace PictureAlbum.API.Services
 {
-    private readonly ApplicationDbContext _dbContext;
-
-    public FileService(ApplicationDbContext dbContext)
+    public class FileService : IFileService
     {
-        _dbContext = dbContext;
-    }
+        private readonly ApplicationDbContext _dbContext;
+        private readonly IWebHostEnvironment _env;
 
-    public async Task<List<FileEntity>> GetFilesAsync()
-    {
-        return await _dbContext.Files.ToListAsync();  // Now, ToListAsync should work
-    }
-
-    public async Task<(bool Success, string Message, int? Id)> AddFileAsync(FileEntity fileEntity, IFormFile file)
-    {
-        try
+        public FileService(ApplicationDbContext dbContext, IWebHostEnvironment env)
         {
-            var uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+            _dbContext = dbContext;
+            _env = env;
+        }
+
+        public async Task<FileEntity> UploadFileAsync(IFormFile File, string fileName, string fileDate, string fileDescription)
+        {
+            if (File == null || File.Length == 0)
+            {
+                throw new ArgumentException("No file uploaded.");
+            }
+
+            var uploadDirectory = Path.Combine(_env.ContentRootPath, "uploads");
             if (!Directory.Exists(uploadDirectory))
             {
                 Directory.CreateDirectory(uploadDirectory);
             }
 
-            var filePath = Path.Combine(uploadDirectory, fileEntity.FileName);
+            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(File.FileName);
+            var filePath = Path.Combine(uploadDirectory, uniqueFileName);
+
+            // Save the file to the server
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await file.CopyToAsync(stream);
+                await File.CopyToAsync(stream);
             }
+
+            // Convert file content to a byte array
+            byte[] fileContent;
+            using (var memoryStream = new MemoryStream())
+            {
+                await File.CopyToAsync(memoryStream);
+                fileContent = memoryStream.ToArray();
+            }
+
+            var fileEntity = new FileEntity
+            {
+                Name = fileName,
+                FileName = uniqueFileName,
+                FileType = File.ContentType,
+                FileSize = File.Length,
+                FileContent = fileContent,
+                Description = fileDescription,
+                UploadDate = DateTime.TryParse(fileDate, out var parsedDate) ? parsedDate : DateTime.UtcNow
+            };
 
             _dbContext.Files.Add(fileEntity);
             await _dbContext.SaveChangesAsync();
 
-            return (true, "File uploaded successfully.", fileEntity.Id);
+            return fileEntity;
         }
-        catch (Exception ex)
+
+        public async Task<List<FileEntity>> GetFilesAsync()
         {
-            return (false, $"Error uploading file: {ex.Message}", null);
+            return await _dbContext.Files.ToListAsync();
         }
     }
 }

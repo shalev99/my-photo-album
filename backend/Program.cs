@@ -1,13 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using PictureAlbum.API.Data;
+using PictureAlbum.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(); // Enable OpenAPI/Swagger UI
+
+// Register DbContext to use SQL Server with the connection string
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+
+// Register IFileService and FileService
+builder.Services.AddScoped<IFileService, FileService>();
 
 // Add services for controllers
 builder.Services.AddControllers();
@@ -37,12 +43,13 @@ app.UseCors(MyAllowSpecificOrigins);
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();  // Map OpenAPI endpoints for Swagger
 }
 
+// Enable HTTPS redirection
 app.UseHttpsRedirection();
 
-// Add a route to get all files (this can be handled by the FileController)
+// Map controllers to routes
 app.MapControllers();
 
 // Run the application
