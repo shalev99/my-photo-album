@@ -2,12 +2,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using PictureAlbum.API.Data;
 using PictureAlbum.API.Models;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using PictureAlbum.API.Models;
-using PictureAlbum.API.DTOs;  // Updated reference to the new namespace
 
 namespace PictureAlbum.API.Services
 {
@@ -23,7 +17,7 @@ namespace PictureAlbum.API.Services
         }
 
         // Method for uploading a file
-        public async Task<FileDTO> UploadFileAsync(
+        public async Task<FileEntity> UploadFileAsync(
             IFormFile file, 
             string fileName, 
             string fileDate, 
@@ -35,11 +29,18 @@ namespace PictureAlbum.API.Services
                 throw new ArgumentException("No file uploaded.");
             }
 
-            // Check if the file name already exists in the database
-            if (_dbContext.Files.Any(f => f.Name == fileName))
+            // Check if the file name (actual uploaded file name) already exists in the database
+            if (_dbContext.Files.Any(f => f.FileName == file.FileName))
             {
                 throw new ArgumentException("A file with this name already exists.");
             }
+
+            // Check if the picture name (from the form) already exists in the database
+            if (_dbContext.Files.Any(f => f.Name == fileName))
+            {
+                throw new ArgumentException("A picture with this name already exists.");
+            }
+
 
             // Read the file content as a byte array
             byte[] fileContent;
@@ -56,10 +57,11 @@ namespace PictureAlbum.API.Services
             var fileEntity = new FileEntity
             {
                 Name = fileName,
-                FileName = fileName,
+                FileName = file.FileName,
                 FileType = file.ContentType,
                 FileSize = file.Length,
-                FileContent = fileContent, // Store the byte array in the DB for later retrieval
+                FileContent = fileContent,
+                FileContentBase64 = base64FileContent,
                 Description = fileDescription,
                 UploadDate = DateTime.TryParse(fileDate, out var parsedDate)
                     ? parsedDate
@@ -70,22 +72,8 @@ namespace PictureAlbum.API.Services
             _dbContext.Files.Add(fileEntity);
             await _dbContext.SaveChangesAsync();
 
-            // Create a FileDTO response object
-            var fileDTO = new FileDTO
-            {
-                Id = fileEntity.Id,
-                Name = fileEntity.Name,
-                FileName = fileEntity.FileName,
-                FileSize = fileEntity.FileSize,
-                FileType = fileEntity.FileType,
-                FileContentBase64 = base64FileContent, // Include base64 content in the response
-                Description = fileEntity.Description,
-                UploadDate = fileEntity.UploadDate,
-                Src = $"data:{fileEntity.FileType};base64,{base64FileContent}"
-            };
-
             // Return the fileDTO to the client
-            return fileDTO;
+            return fileEntity;
         }
 
         // Method to retrieve all files

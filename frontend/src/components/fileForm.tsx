@@ -3,10 +3,10 @@ import { usefilesStore } from '../store/usefilesStore';
 
 const FileForm = () => {
   // State variables for form inputs
-  const [pictureName, setPictureName] = useState('');
-  const [pictureDate, setPictureDate] = useState('');
-  const [pictureDescription, setPictureDescription] = useState('');
-  const [pictureFile, setPictureFile] = useState<File | null>(null);
+  const [fileName, setfileName] = useState('');
+  const [fileDate, setfileDate] = useState('');
+  const [fileDescription, setfileDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -19,16 +19,16 @@ const FileForm = () => {
   // Handle file selection from the input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setPictureFile(e.target.files[0]);
+      setFile(e.target.files[0]);
     }
   };
 
   // Reset the form fields
   const resetForm = () => {
-    setPictureName('');
-    setPictureDate('');
-    setPictureDescription('');
-    setPictureFile(null);
+    setfileName('');
+    setfileDate('');
+    setfileDescription('');
+    setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -38,16 +38,16 @@ const FileForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!pictureName || !pictureFile) {
-      alert('Picture Name and Picture File are mandatory!');
+    if (!fileName || !file) {
+      alert('file Name and  File are mandatory!');
       return;
     }
 
     const formData = new FormData();
-    formData.append('pictureName', pictureName);
-    if (pictureDate) formData.append('pictureDate', pictureDate); // Only append if not empty
-    if (pictureDescription) formData.append('pictureDescription', pictureDescription); // Only append if not empty
-    formData.append('pictureFile', pictureFile);
+    formData.append('fileName', fileName);
+    if (fileDate) formData.append('fileDate', fileDate); // Only append if not empty
+    if (fileDescription) formData.append('fileDescription', fileDescription); // Only append if not empty
+    formData.append('File', file);
 
     try {
       const response = await fetch('https://localhost:7061/api/files/upload', {
@@ -57,7 +57,7 @@ const FileForm = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload picture');
+        throw new Error(errorData.error || 'Failed to upload file');
       }
 
       const fileData = await response.json();
@@ -65,12 +65,12 @@ const FileForm = () => {
 
       addFile(fileData);
 
-      setSuccessMessage('Picture uploaded successfully!');
+      setSuccessMessage('file uploaded successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
 
       resetForm();
     } catch (error: any) {
-      console.error('Error uploading picture:', error);
+      console.error('Error uploading file:', error);
       setErrorMessage(error.message || 'An unknown error occurred');
       setTimeout(() => setErrorMessage(null), 3000);
 
@@ -86,8 +86,8 @@ const FileForm = () => {
         <label className="block text-sm font-medium">Picture Name:</label>
         <input
           type="text"
-          value={pictureName}
-          onChange={(e) => setPictureName(e.target.value)}
+          value={fileName}
+          onChange={(e) => setfileName(e.target.value)}
           maxLength={50}
           required
           className="border rounded-md p-2 w-full"
@@ -98,8 +98,8 @@ const FileForm = () => {
         <label className="block text-sm font-medium">Picture Date:</label>
         <input
           type="datetime-local"
-          value={pictureDate}
-          onChange={(e) => setPictureDate(e.target.value)}
+          value={fileDate}
+          onChange={(e) => setfileDate(e.target.value)}
           className="border rounded-md p-2 w-full"
         />
       </div>
@@ -108,8 +108,8 @@ const FileForm = () => {
         <label className="block text-sm font-medium">Picture Description:</label>
         <input
           type="text"
-          value={pictureDescription}
-          onChange={(e) => setPictureDescription(e.target.value)}
+          value={fileDescription}
+          onChange={(e) => setfileDescription(e.target.value)}
           maxLength={250}
           className="border rounded-md p-2 w-full"
         />

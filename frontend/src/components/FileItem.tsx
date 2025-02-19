@@ -7,12 +7,7 @@ interface FileItemProps {
 
 const FileItem: React.FC<FileItemProps> = ({ file }) => {
   // Determine the image source based on available data
-  const imageSource = file.src
-  ? file.src
-  : (file.fileType && file.fileContent)
-  ? `data:${file.fileType};base64,${file.fileContent}`
-  : "";
-
+  const imageSource = `data:${file.fileType};base64,${file.fileContent ? file.fileContent : file.fileContentBase64}`;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4">

@@ -11,7 +11,7 @@ const HomePage: React.FC = () => {
   // Fetch files from the DB when the component mounts
   useEffect(() => {
     fetchfiles();
-  }, [fetchfiles]);
+  }, []);
 
   return (
     <div className="container mx-auto p-6">
@@ -32,7 +32,7 @@ const HomePage: React.FC = () => {
               uploadDate: file.uploadDate instanceof Date
                 ? file.uploadDate.toISOString()
                 : String(file.uploadDate),
-              src: file.src
+                fileContentBase64: file.fileContentBase64
             };
 
             return <FileItem key={formattedFile.id} file={formattedFile} />;

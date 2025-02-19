@@ -9,7 +9,7 @@ export interface Files {
   fileType: string; 
   uploadDate: string | Date; 
   fileContent: string;
-  src: string;
+  fileContentBase64: string;
 }
 interface FilesStore {
   files: Files[];

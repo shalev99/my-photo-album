@@ -17,12 +17,12 @@ namespace PictureAlbum.API.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile([FromForm] IFormFile pictureFile, [FromForm] string pictureName, [FromForm] string pictureDate, [FromForm] string pictureDescription)
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile File, [FromForm] string fileName, [FromForm] string fileDate, [FromForm] string fileDescription)
         {
             try
             {
-                var fileEntity = await _fileService.UploadFileAsync(pictureFile, pictureName, pictureDate, pictureDescription);
-                return Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName ,fileEntity.Src});
+                var fileEntity = await _fileService.UploadFileAsync(File, fileName, fileDate, fileDescription);
+                return Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName ,fileEntity.FileContentBase64,fileEntity.FileType});
             }
             catch (Exception ex)
             {
