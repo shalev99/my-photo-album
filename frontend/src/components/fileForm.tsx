@@ -1,58 +1,66 @@
 import React, { useState, useRef } from 'react';
 import { usefilesStore } from '../store/usefilesStore';
+import { sanitizeInput, handleFileValidation } from '../utils/utils';
 
 const FileForm = () => {
-  // State variables for form inputs
-  const [fileName, setfileName] = useState('');
-  const [fileDate, setfileDate] = useState('');
-  const [fileDescription, setfileDescription] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [fileDate, setFileDate] = useState('');
+  const [fileDescription, setFileDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Reference to the file input for resetting its value
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Get the addFile function from the Zustand store
   const addFile = usefilesStore((state) => state.addFile);
 
-  // Handle file selection from the input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
+    if (!e.target.files) return;
+
+    const selectedFile = e.target.files[0];
+    const validationError = handleFileValidation(selectedFile);
+
+    if (validationError) {
+      setErrorMessage(validationError);
+      e.target.value = '';
+      return;
     }
+
+    setFile(selectedFile);
+    setErrorMessage(null);
   };
 
-  // Reset the form fields
   const resetForm = () => {
-    setfileName('');
-    setfileDate('');
-    setfileDescription('');
+    setFileName('');
+    setFileDate('');
+    setFileDescription('');
     setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Handle form submission and file upload
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!fileName || !file) {
-      alert('file Name and  File are mandatory!');
+    if (!fileName.trim() || !file) {
+      setErrorMessage('File name and image file are required!');
       return;
     }
 
+    const sanitizedFileName = sanitizeInput(fileName);
+    const sanitizedDescription = sanitizeInput(fileDescription);
+
     const formData = new FormData();
-    formData.append('fileName', fileName);
-    if (fileDate) formData.append('fileDate', fileDate); // Only append if not empty
-    if (fileDescription) formData.append('fileDescription', fileDescription); // Only append if not empty
+    formData.append('fileName', sanitizedFileName);
+    if (fileDate) formData.append('fileDate', fileDate);
+    if (sanitizedDescription) formData.append('fileDescription', sanitizedDescription);
     formData.append('File', file);
 
     try {
       const response = await fetch('https://localhost:7061/api/files/upload', {
         method: 'POST',
         body: formData,
+        headers: { 'X-CSRF-Token': 'your_csrf_token_here' },
       });
 
       if (!response.ok) {
@@ -61,19 +69,15 @@ const FileForm = () => {
       }
 
       const fileData = await response.json();
-      console.log('Response data:', fileData);  // Log the response to check for 'Src'
-
       addFile(fileData);
 
-      setSuccessMessage('file uploaded successfully!');
+      setSuccessMessage('File uploaded successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
-
       resetForm();
     } catch (error: any) {
       console.error('Error uploading file:', error);
       setErrorMessage(error.message || 'An unknown error occurred');
       setTimeout(() => setErrorMessage(null), 3000);
-
     }
   };
 
@@ -87,7 +91,7 @@ const FileForm = () => {
         <input
           type="text"
           value={fileName}
-          onChange={(e) => setfileName(e.target.value)}
+          onChange={(e) => setFileName(e.target.value)}
           maxLength={50}
           required
           className="border rounded-md p-2 w-full"
@@ -99,7 +103,7 @@ const FileForm = () => {
         <input
           type="datetime-local"
           value={fileDate}
-          onChange={(e) => setfileDate(e.target.value)}
+          onChange={(e) => setFileDate(e.target.value)}
           className="border rounded-md p-2 w-full"
         />
       </div>
@@ -109,7 +113,7 @@ const FileForm = () => {
         <input
           type="text"
           value={fileDescription}
-          onChange={(e) => setfileDescription(e.target.value)}
+          onChange={(e) => setFileDescription(e.target.value)}
           maxLength={250}
           className="border rounded-md p-2 w-full"
         />
@@ -120,6 +124,7 @@ const FileForm = () => {
         <input
           type="file"
           className="border rounded-md p-2 w-full"
+          accept="image/*"
           onChange={handleFileChange}
           required
           ref={fileInputRef}
