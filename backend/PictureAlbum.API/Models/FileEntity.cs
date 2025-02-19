@@ -10,5 +10,6 @@ namespace PictureAlbum.API.Models
         public string? Description { get; set; }  // Optional description for the picture (up to 250 characters)
         public byte[] FileContent { get; set; }  // The binary content of the file (actual image data)
         public DateTime UploadDate { get; set; }  // The date and time when the picture was uploaded
+
     }
 }

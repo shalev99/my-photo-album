@@ -13,16 +13,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.7.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-scripts": "^5.0.1",
+    "tailwindcss": "^3.4.17",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.4",
     "@types/react": "^19.0.9",
     "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.2",
+    "react-scripts": "^5.0.1",
     "typescript": "^4.9.5"
   },
   "browserslist": {

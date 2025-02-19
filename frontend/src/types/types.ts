@@ -5,6 +5,7 @@ export interface FileData {
   fileName: string;
   fileSize: number;
   fileType: string;
-  fileContent: string;
+  fileContent: string | Date;
   uploadDate: string;
+  src: string;
 }

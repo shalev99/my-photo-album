@@ -6,30 +6,27 @@ interface FileItemProps {
 }
 
 const FileItem: React.FC<FileItemProps> = ({ file }) => {
+  // Determine the image source based on available data
+  const imageSource = file.src
+  ? file.src
+  : (file.fileType && file.fileContent)
+  ? `data:${file.fileType};base64,${file.fileContent}`
+  : "";
+
+
   return (
-    <li className="border rounded-lg shadow-lg p-4">
+    <div className="bg-white rounded-lg shadow-md p-4">
       <h2 className="text-lg font-semibold">{file.name}</h2>
-      <p className="text-sm text-gray-700">
-        <strong>Description:</strong> {file.description}
-      </p>
-      <p className="text-sm">
-        <strong>File Name:</strong> {file.fileName}
-      </p>
-      <p className="text-sm">
-        <strong>File Size:</strong> {file.fileSize} bytes
-      </p>
-      <p className="text-sm">
-        <strong>File Type:</strong> {file.fileType}
-      </p>
-      <p className="text-sm">
-        <strong>Upload Date:</strong> {new Date(file.uploadDate).toLocaleString()}
-      </p>
-      <img
-        src={`data:${file.fileType};base64,${file.fileContent}`}
-        alt={file.name}
-        className="mt-3 max-w-full h-auto rounded"
-      />
-    </li>
+      {imageSource ? (
+        <img
+          src={imageSource}
+          alt={file.name}
+          className="mt-3 w-full h-48 object-cover rounded-md"
+        />
+      ) : (
+        <p>No image available</p>
+      )}
+    </div>
   );
 };
 

@@ -6,6 +6,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using PictureAlbum.API.Models;
+using PictureAlbum.API.DTOs;  // Updated reference to the new namespace
 
 namespace PictureAlbum.API.Services
 {
@@ -20,53 +22,73 @@ namespace PictureAlbum.API.Services
             _env = env;
         }
 
-        public async Task<FileEntity> UploadFileAsync(IFormFile File, string fileName, string fileDate, string fileDescription)
+        // Method for uploading a file
+        public async Task<FileDTO> UploadFileAsync(
+            IFormFile file, 
+            string fileName, 
+            string fileDate, 
+            string fileDescription)
         {
-            if (File == null || File.Length == 0)
+            // Validate the file input
+            if (file == null || file.Length == 0)
             {
                 throw new ArgumentException("No file uploaded.");
             }
 
-            var uploadDirectory = Path.Combine(_env.ContentRootPath, "uploads");
-            if (!Directory.Exists(uploadDirectory))
+            // Check if the file name already exists in the database
+            if (_dbContext.Files.Any(f => f.Name == fileName))
             {
-                Directory.CreateDirectory(uploadDirectory);
+                throw new ArgumentException("A file with this name already exists.");
             }
 
-            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(File.FileName);
-            var filePath = Path.Combine(uploadDirectory, uniqueFileName);
-
-            // Save the file to the server
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await File.CopyToAsync(stream);
-            }
-
-            // Convert file content to a byte array
+            // Read the file content as a byte array
             byte[] fileContent;
             using (var memoryStream = new MemoryStream())
             {
-                await File.CopyToAsync(memoryStream);
+                await file.CopyToAsync(memoryStream);
                 fileContent = memoryStream.ToArray();
             }
 
+            // Convert the byte array to base64 string
+            string base64FileContent = Convert.ToBase64String(fileContent);
+
+            // Create a new file entity
             var fileEntity = new FileEntity
             {
                 Name = fileName,
-                FileName = uniqueFileName,
-                FileType = File.ContentType,
-                FileSize = File.Length,
-                FileContent = fileContent,
+                FileName = fileName,
+                FileType = file.ContentType,
+                FileSize = file.Length,
+                FileContent = fileContent, // Store the byte array in the DB for later retrieval
                 Description = fileDescription,
-                UploadDate = DateTime.TryParse(fileDate, out var parsedDate) ? parsedDate : DateTime.UtcNow
+                UploadDate = DateTime.TryParse(fileDate, out var parsedDate)
+                    ? parsedDate
+                    : DateTime.UtcNow
             };
 
+            // Add the file entity to the database
             _dbContext.Files.Add(fileEntity);
             await _dbContext.SaveChangesAsync();
 
-            return fileEntity;
+            // Create a FileDTO response object
+            var fileDTO = new FileDTO
+            {
+                Id = fileEntity.Id,
+                Name = fileEntity.Name,
+                FileName = fileEntity.FileName,
+                FileSize = fileEntity.FileSize,
+                FileType = fileEntity.FileType,
+                FileContentBase64 = base64FileContent, // Include base64 content in the response
+                Description = fileEntity.Description,
+                UploadDate = fileEntity.UploadDate,
+                Src = $"data:{fileEntity.FileType};base64,{base64FileContent}"
+            };
+
+            // Return the fileDTO to the client
+            return fileDTO;
         }
 
+        // Method to retrieve all files
         public async Task<List<FileEntity>> GetFilesAsync()
         {
             return await _dbContext.Files.ToListAsync();
