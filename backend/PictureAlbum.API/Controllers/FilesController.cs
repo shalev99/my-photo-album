@@ -17,7 +17,7 @@ namespace PictureAlbum.API.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile([FromForm] IFormFile File, [FromForm] string fileName, [FromForm] string fileDate, [FromForm] string fileDescription)
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile File, [FromForm] string fileName, [FromForm] string? fileDate, [FromForm] string? fileDescription)
         {
             try
             {

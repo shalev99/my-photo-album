@@ -20,8 +20,8 @@ namespace PictureAlbum.API.Services
         public async Task<FileEntity> UploadFileAsync(
             IFormFile file, 
             string fileName, 
-            string fileDate, 
-            string fileDescription)
+            string? fileDate, 
+            string? fileDescription)
         {
             // Validate the file input
             if (file == null || file.Length == 0)
