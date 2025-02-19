@@ -1,85 +1,56 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using PictureAlbum.API.Data;
 using PictureAlbum.API.Models;
+using PictureAlbum.API.Utils;
+
 
 namespace PictureAlbum.API.Services
 {
     public class FileService : IFileService
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly IWebHostEnvironment _env;
 
-        public FileService(ApplicationDbContext dbContext, IWebHostEnvironment env)
+        public FileService(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
-            _env = env;
         }
 
-        // Method for uploading a file
-        public async Task<FileEntity> UploadFileAsync(
-            IFormFile file, 
-            string fileName, 
-            string? fileDate, 
-            string? fileDescription)
+        /// <summary>
+        /// Uploads a file after performing security validations.
+        /// </summary>
+        public async Task<FileEntity> UploadFileAsync(IFormFile file, string fileName, string? fileDate, string? fileDescription)
         {
-            // Validate the file input
-            if (file == null || file.Length == 0)
-            {
-                throw new ArgumentException("No file uploaded.");
-            }
+            // Validate input before proceeding
+            FileUtils.ValidateFile(file, fileName, _dbContext);
 
-            // Check if the file name (actual uploaded file name) already exists in the database
-            if (_dbContext.Files.Any(f => f.FileName == file.FileName))
-            {
-                throw new ArgumentException("A file with this name already exists.");
-            }
+            var (fileContent, base64FileContent) = await FileUtils.ReadFileContentAsync(file);
 
-            // Check if the picture name (from the form) already exists in the database
-            if (_dbContext.Files.Any(f => f.Name == fileName))
-            {
-                throw new ArgumentException("A picture with this name already exists.");
-            }
-
-
-            // Read the file content as a byte array
-            byte[] fileContent;
-            using (var memoryStream = new MemoryStream())
-            {
-                await file.CopyToAsync(memoryStream);
-                fileContent = memoryStream.ToArray();
-            }
-
-            // Convert the byte array to base64 string
-            string base64FileContent = Convert.ToBase64String(fileContent);
-
-            // Create a new file entity
+            // Prepare the entity before inserting it into the database
             var fileEntity = new FileEntity
             {
-                Name = fileName,
+                Name = fileName.Trim(),
                 FileName = file.FileName,
                 FileType = file.ContentType,
                 FileSize = file.Length,
                 FileContent = fileContent,
                 FileContentBase64 = base64FileContent,
-                Description = fileDescription,
-                UploadDate = DateTime.TryParse(fileDate, out var parsedDate)
-                    ? parsedDate
-                    : DateTime.UtcNow
+                Description = fileDescription?.Trim(),
+                UploadDate = FileUtils.ParseFileDate(fileDate)
             };
 
-            // Add the file entity to the database
+            // Securely save to the database
             _dbContext.Files.Add(fileEntity);
             await _dbContext.SaveChangesAsync();
 
-            // Return the fileDTO to the client
             return fileEntity;
         }
 
-        // Method to retrieve all files
+        /// <summary>
+        /// Retrieves a list of stored files.
+        /// </summary>
         public async Task<List<FileEntity>> GetFilesAsync()
         {
-            return await _dbContext.Files.ToListAsync();
+            return await _dbContext.Files.AsNoTracking().ToListAsync();
         }
     }
 }
