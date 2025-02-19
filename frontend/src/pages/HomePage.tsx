@@ -1,37 +1,35 @@
-import React, { useEffect } from 'react';
-import { usefilesStore } from '../store/usefilesStore';
+import React, { useEffect } from "react";
+import { usefilesStore } from "../store/usefilesStore";
 import FileForm from '../components/fileForm';
+import FileItem from '../components/FileItem';
+import { FileData } from '../types/types';
 
-const HomePage = () => {
-    const { files, fetchfiles } = usefilesStore();
-    
-    useEffect(() => {
-        fetchfiles();
-    }, [fetchfiles]);
+const HomePage: React.FC = () => {
+  const { files, fetchfiles } = usefilesStore();
 
-    return (
-        <div>
-            <h1>Picture Album</h1>
-            <FileForm />
-            <ul>
-                {files.map((file) => (
-                    <li key={file.id}>
-                        <h2>{file.name}</h2>
-                        <p><strong>Description:</strong> {file.description}</p>
-                        <p><strong>File Name:</strong> {file.fileName}</p>
-                        <p><strong>File Size:</strong> {file.fileSize} bytes</p>
-                        <p><strong>File Type:</strong> {file.fileType}</p>
-                        <p><strong>Upload Date:</strong> {new Date(file.uploadDate).toLocaleString()}</p>
-                        <img
-                            src={`data:${file.fileType};base64,${file.fileContent}`}
-                            alt={file.name}
-                            style={{ maxWidth: '300px', height: 'auto' }}
-                        />
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
+  useEffect(() => {
+    fetchfiles();
+  }, [fetchfiles]);
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Picture Album</h1>
+      <FileForm />
+      {files.length > 0 ? (
+        <ul>
+        {files.map((file) => (
+          <FileItem
+            key={String(file.id)}
+            file={{ ...file, id: String(file.id), uploadDate: String(file.uploadDate) }}
+          />
+        ))}
+      </ul>
+      
+      ) : (
+        <p className="text-gray-500 mt-4">No files uploaded yet.</p>
+      )}
+    </div>
+  );
 };
 
 export default HomePage;
