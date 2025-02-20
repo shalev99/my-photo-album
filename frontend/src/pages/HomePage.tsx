@@ -17,10 +17,7 @@ const HomePage: React.FC = () => {
     <div className="container mx-auto p-6">
       {/* Page title */}
       <h1 className="text-2xl font-bold mb-4">Picture Album</h1>
-      
-      {/* File upload form */}
-      <FileForm />
-      
+           
       {/* Display files in a responsive grid */}
       {files.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
@@ -41,6 +38,10 @@ const HomePage: React.FC = () => {
       ) : (
         <p className="text-gray-500 mt-4">No files uploaded yet.</p>
       )}
+
+      {/* File upload form */}
+      <FileForm />
+
     </div>
   );
 };

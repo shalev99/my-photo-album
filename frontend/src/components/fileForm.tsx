@@ -9,6 +9,7 @@ const FileForm = () => {
   const [file, setFile] = useState<File | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFile = usefilesStore((state) => state.addFile);
@@ -37,6 +38,11 @@ const FileForm = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleConfirmReset = () => {
+    resetForm();
+    setShowResetConfirm(false);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -82,71 +88,95 @@ const FileForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-4">
-      {successMessage && <p className="text-green-600 font-semibold">{successMessage}</p>}
-      {errorMessage && <p className="text-red-600 font-semibold">{errorMessage}</p>}
+    <div>
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-4">
+        {successMessage && <p className="text-green-600 font-semibold">{successMessage}</p>}
+        {errorMessage && <p className="text-red-600 font-semibold">{errorMessage}</p>}
 
-      <div>
-        <label className="block text-sm font-medium">Picture Name:</label>
-        <input
-          type="text"
-          value={fileName}
-          onChange={(e) => setFileName(e.target.value)}
-          maxLength={50}
-          required
-          className="border rounded-md p-2 w-full"
-        />
-      </div>
+        <div>
+          <label className="block text-sm font-medium">Picture Name:</label>
+          <input
+            type="text"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+            maxLength={50}
+            required
+            className="border rounded-md p-2 w-full"
+          />
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium">Picture Date:</label>
-        <input
-          type="datetime-local"
-          value={fileDate}
-          onChange={(e) => setFileDate(e.target.value)}
-          className="border rounded-md p-2 w-full"
-        />
-      </div>
+        <div>
+          <label className="block text-sm font-medium">Picture Date:</label>
+          <input
+            type="datetime-local"
+            value={fileDate}
+            onChange={(e) => setFileDate(e.target.value)}
+            className="border rounded-md p-2 w-full"
+          />
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium">Picture Description:</label>
-        <input
-          type="text"
-          value={fileDescription}
-          onChange={(e) => setFileDescription(e.target.value)}
-          maxLength={250}
-          className="border rounded-md p-2 w-full"
-        />
-      </div>
+        <div>
+          <label className="block text-sm font-medium">Picture Description:</label>
+          <input
+            type="text"
+            value={fileDescription}
+            onChange={(e) => setFileDescription(e.target.value)}
+            maxLength={250}
+            className="border rounded-md p-2 w-full"
+          />
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium">Picture File:</label>
-        <input
-          type="file"
-          className="border rounded-md p-2 w-full"
-          accept="image/*"
-          onChange={handleFileChange}
-          required
-          ref={fileInputRef}
-        />
-      </div>
+        <div>
+          <label className="block text-sm font-medium">Picture File:</label>
+          <input
+            type="file"
+            className="border rounded-md p-2 w-full"
+            accept="image/*"
+            onChange={handleFileChange}
+            required
+            ref={fileInputRef}
+          />
+        </div>
 
-      <div className="flex space-x-2">
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-        >
-          Add Picture
-        </button>
-        <button
-          type="button"
-          onClick={resetForm}
-          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-        >
-          Reset
-        </button>
-      </div>
-    </form>
+        <div className="flex space-x-2">
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+          >
+            Add Picture
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowResetConfirm(true)}
+            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+          >
+            Reset
+          </button>
+        </div>
+      </form>
+
+      {showResetConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white p-4 rounded-lg shadow-md">
+            <p className="text-lg font-semibold">Are you sure you want to reset the form?</p>
+            <div className="flex space-x-2 mt-4">
+              <button
+                onClick={handleConfirmReset}
+                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+              >
+                Yes, Reset
+              </button>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
