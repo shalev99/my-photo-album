@@ -1,17 +1,13 @@
 import { create } from "zustand";
 import { FileData } from "../types/types";
-import { isValidDate  } from '../utils/utils';
-
-export interface Files {
-  file: FileData;
-}
+import { isValidDate } from "../utils/utils";
 
 export interface FilesStore {
-  files: Files[];
+  files: FileData[];
   page: number;
   hasMore: boolean;
   fetchFiles: (page?: number) => Promise<void>;
-  addFile: (file: Files) => void;
+  addFile: (file: FileData) => void;
 }
 
 export const useFilesStore = create<FilesStore>((set, get) => ({
@@ -38,15 +34,12 @@ export const useFilesStore = create<FilesStore>((set, get) => ({
 
       const data: FileData[] = await res.json();
 
-      const formattedData: Files[] = data.map((file) => ({
-        file: {
-          ...file,
-          uploadDate: isValidDate(file.uploadDate)
-            ? file.uploadDate.toISOString()
-            : String(file.uploadDate),
-        },
+      const formattedData: FileData[] = data.map((file) => ({
+        ...file,
+        uploadDate: isValidDate(file.uploadDate)
+          ? file.uploadDate.toISOString()
+          : String(file.uploadDate),
       }));
-      
 
       set((state) => ({
         files: page === 1 ? formattedData : [...state.files, ...formattedData],
@@ -58,6 +51,6 @@ export const useFilesStore = create<FilesStore>((set, get) => ({
     }
   },
 
-  addFile: (file: Files) =>
+  addFile: (file: FileData) =>
     set((state) => ({ files: [...state.files, file] })),
 }));

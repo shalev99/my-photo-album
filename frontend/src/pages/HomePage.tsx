@@ -15,15 +15,15 @@ const HomePage: React.FC = () => {
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">Picture Album</h1>
 
-      {files.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
-      {files.map(({ file }: { file: FileData }) => (
-            <FileItem key={file.id} file={file} />
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-500 mt-4">No files uploaded yet.</p>
-      )}
+    {files?.length > 0 ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+        {files.map((file: FileData) => 
+          file ? <FileItem key={file.id} file={file} /> : null
+        )}
+      </div>
+    ) : (
+      <p className="text-gray-500 mt-4">No files uploaded yet.</p>
+    )}
 
       {hasMore && (
         <button
