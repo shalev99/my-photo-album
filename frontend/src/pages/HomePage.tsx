@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
-import { usefilesStore } from "../store/usefilesStore";
+import { useFilesStore } from "../store/usefilesStore";
 import FileForm from '../components/fileForm';
 import FileItem from '../components/FileItem';
 import { FileData } from '../types/types';
 
 const HomePage: React.FC = () => {
   // Get files and the fetchfiles function from the store
-  const { files, fetchfiles } = usefilesStore();
+  const { files, fetchFiles: fetchfiles } = useFilesStore();
 
   // Fetch files from the DB when the component mounts
   useEffect(() => {

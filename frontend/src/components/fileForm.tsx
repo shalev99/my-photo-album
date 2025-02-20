@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { usefilesStore } from '../store/usefilesStore';
+import { useFilesStore } from '../store/usefilesStore';
 import { sanitizeInput, handleFileValidation } from '../utils/utils';
 
 const FileForm = () => {
@@ -12,7 +12,7 @@ const FileForm = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const addFile = usefilesStore((state) => state.addFile);
+  const addFile = useFilesStore((state) => state.addFile);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;

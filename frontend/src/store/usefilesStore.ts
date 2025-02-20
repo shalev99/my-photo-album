@@ -13,13 +13,13 @@ export interface Files {
 }
 interface FilesStore {
   files: Files[];
-  fetchfiles: () => Promise<void>;
+  fetchFiles: () => Promise<void>;
   addFile: (file: Files) => void;
 }
 
-export const usefilesStore = create<FilesStore>((set) => ({
+export const useFilesStore = create<FilesStore>((set) => ({
   files: [],
-  fetchfiles: async () => {
+  fetchFiles: async () => {
     try {
       const res = await fetch('https://localhost:7061/api/files', {
         method: 'GET',
