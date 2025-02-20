@@ -30,12 +30,12 @@ namespace PictureAlbum.API.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetFiles()
+       [HttpGet]
+        public async Task<IActionResult> GetFiles([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var files = await _fileService.GetFilesAsync();
+                var files = await _fileService.GetFilesAsync(page, pageSize);
                 return Ok(files);
             }
             catch (Exception ex)
@@ -43,5 +43,6 @@ namespace PictureAlbum.API.Controllers
                 return StatusCode(500, new { Message = "An error occurred while retrieving files.", Error = ex.Message });
             }
         }
+
     }
 }
