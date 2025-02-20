@@ -5,7 +5,7 @@ interface FileItemProps {
   file: FileData;
 }
 
-const FileItem: React.FC<FileItemProps> = ({ file }) => {
+const FileItem: React.FC<FileItemProps> = React.memo(({ file }) => {
   const imageSource = `data:${file.fileType};base64,${
     file.fileContent ? file.fileContent : file.fileContentBase64
   }`;
@@ -31,6 +31,6 @@ const FileItem: React.FC<FileItemProps> = ({ file }) => {
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => prevProps.file.id === nextProps.file.id);
 
 export default FileItem;
