@@ -22,7 +22,7 @@ namespace PictureAlbum.API.Controllers
             try
             {
                 var fileEntity = await _fileService.UploadFileAsync(File, fileName, fileDate, fileDescription);
-                return Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName, fileEntity.FileContentBase64, fileEntity.FileType });
+                return Ok(fileEntity);            
             }
             catch (Exception ex)
             {
