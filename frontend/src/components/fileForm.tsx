@@ -94,8 +94,9 @@ const FileForm = () => {
         {errorMessage && <p className="text-red-600 font-semibold">{errorMessage}</p>}
 
         <div>
-          <label className="block text-sm font-medium">Picture Name:</label>
+          <label htmlFor="fileName" className="block text-sm font-medium">Picture Name:</label>
           <input
+            id="fileName"
             type="text"
             value={fileName}
             onChange={(e) => setFileName(e.target.value)}
@@ -106,8 +107,9 @@ const FileForm = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Picture Date:</label>
+          <label htmlFor="fileDate" className="block text-sm font-medium">Picture Date:</label>
           <input
+            id="fileDate"
             type="datetime-local"
             value={fileDate}
             onChange={(e) => setFileDate(e.target.value)}
@@ -116,8 +118,9 @@ const FileForm = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Picture Description:</label>
+          <label htmlFor="fileDescription" className="block text-sm font-medium">Picture Description:</label>
           <input
+            id="fileDescription"
             type="text"
             value={fileDescription}
             onChange={(e) => setFileDescription(e.target.value)}
@@ -127,8 +130,9 @@ const FileForm = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Picture File:</label>
+          <label htmlFor="fileInput" className="block text-sm font-medium">Picture File:</label>
           <input
+            id="fileInput"
             type="file"
             className="border rounded-md p-2 w-full"
             accept="image/*"
