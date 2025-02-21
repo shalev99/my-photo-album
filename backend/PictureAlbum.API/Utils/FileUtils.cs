@@ -4,23 +4,28 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using PictureAlbum.API.Data;
 using PictureAlbum.API.Models;
 
 namespace PictureAlbum.API.Utils
 {
+    /// <summary>
+    /// Utility class for handling file operations.
+    /// </summary>
     public static class FileUtils
     {
-        // Allowed file extensions (only images and PDFs)
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".pdf" };
-        
-        // Maximum allowed file size (5MB)
-        private static readonly int MaxFileSize = 5 * 1024 * 1024;
+        private const int MaxFileSize = 5 * 1024 * 1024; // 5MB
 
         /// <summary>
-        /// Validates the uploaded file before processing.
+        /// Validates an uploaded file.
         /// </summary>
-        public static void ValidateFile(IFormFile file, string fileName, ApplicationDbContext dbContext)
+        /// <param name="file">The uploaded file.</param>
+        /// <param name="fileName">The name of the file.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <exception cref="ArgumentException">Thrown when validation fails.</exception>
+        public static async Task ValidateFileAsync(IFormFile file, string fileName, ApplicationDbContext dbContext)
         {
             if (file == null || file.Length == 0)
                 throw new ArgumentException("No file uploaded.");
@@ -28,46 +33,59 @@ namespace PictureAlbum.API.Utils
             if (file.Length > MaxFileSize)
                 throw new ArgumentException("File size exceeds the allowed limit (5MB).");
 
-            // Validate file extension to prevent unwanted file uploads
-            string fileExtension = Path.GetExtension(file.FileName).ToLower();
-            if (!AllowedExtensions.Contains(fileExtension))
+            string fileExtension = Path.GetExtension(file.FileName)?.ToLower();
+            if (string.IsNullOrEmpty(fileExtension) || !AllowedExtensions.Contains(fileExtension))
                 throw new ArgumentException("Invalid file type. Only images and PDFs are allowed.");
 
-            // Ensure file name is safe and formatted correctly
+            string safeFileName = Path.GetFileName(file.FileName); // Prevents path traversal attacks
             if (!IsValidFileName(fileName))
                 throw new ArgumentException("Invalid file name format.");
 
-            // Prevent duplicate file names in the database
-            if (dbContext.Files.Any(f => f.FileName == file.FileName))
-                throw new ArgumentException("A file with this name already exists.");
+            // Optimized query to check for duplicate files in a single call
+            var existingFile = await dbContext.Files
+                .Where(f => f.FileName == safeFileName || f.Name == fileName)
+                .Select(f => new { f.FileName, f.Name })
+                .FirstOrDefaultAsync();
 
-            if (dbContext.Files.Any(f => f.Name == fileName))
-                throw new ArgumentException("A picture with this name already exists.");
+            if (existingFile != null)
+            {
+                if (existingFile.FileName == safeFileName)
+                    throw new InvalidOperationException("A file with this name already exists.");
+
+                if (existingFile.Name == fileName)
+                    throw new InvalidOperationException("A picture with this name already exists.");
+            }
         }
 
         /// <summary>
-        /// Reads file content as a byte array and Base64 string.
+        /// Reads the file content and returns both the byte array and Base64 string.
         /// </summary>
-        public static async Task<(byte[], string)> ReadFileContentAsync(IFormFile file)
+        /// <param name="file">The uploaded file.</param>
+        /// <returns>A tuple containing the file's byte array and its Base64 representation.</returns>
+        public static async Task<(byte[] FileBytes, string Base64)> ReadFileContentAsync(IFormFile file)
         {
-            using var memoryStream = new MemoryStream();
+            await using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
             byte[] fileContent = memoryStream.ToArray();
-            string base64Content = Convert.ToBase64String(fileContent);
-            return (fileContent, base64Content);
+            return (fileContent, Convert.ToBase64String(fileContent));
         }
 
         /// <summary>
-        /// Validates file name format to prevent security vulnerabilities.
+        /// Validates a file name to ensure it follows a safe format.
         /// </summary>
+        /// <param name="fileName">The file name to validate.</param>
+        /// <returns>True if valid, false otherwise.</returns>
         public static bool IsValidFileName(string fileName)
         {
-            return !string.IsNullOrWhiteSpace(fileName) && Regex.IsMatch(fileName, @"^[a-zA-Z0-9-_ ]{1,100}$");
+            return !string.IsNullOrWhiteSpace(fileName) &&
+                   Regex.IsMatch(fileName, @"^[a-zA-Z0-9-_ ]{1,100}$");
         }
 
         /// <summary>
-        /// Safely parses the file date or assigns the current UTC time if invalid.
+        /// Parses a file date string, returning the current UTC time if invalid.
         /// </summary>
+        /// <param name="fileDate">The file date as a string.</param>
+        /// <returns>A valid DateTime object.</returns>
         public static DateTime ParseFileDate(string? fileDate)
         {
             return DateTime.TryParse(fileDate, out var parsedDate) ? parsedDate : DateTime.UtcNow;

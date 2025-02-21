@@ -5,67 +5,89 @@ using PictureAlbum.API.Utils;
 
 namespace PictureAlbum.API.Services
 {
+    /// <summary>
+    /// Service responsible for handling file-related operations.
+    /// </summary>
     public class FileService : IFileService
     {
         private readonly ApplicationDbContext _dbContext;
 
-        // Constructor to inject the database context
+        /// <summary>
+        /// Initializes a new instance of <see cref="FileService"/>.
+        /// </summary>
         public FileService(ApplicationDbContext dbContext)
         {
-            _dbContext = dbContext;
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         /// <summary>
         /// Uploads a file after performing security validations.
         /// </summary>
+        /// <param name="file">The uploaded file.</param>
+        /// <param name="fileName">The user-defined file name.</param>
+        /// <param name="fileDate">The optional file date.</param>
+        /// <param name="fileDescription">The optional file description.</param>
+        /// <returns>The uploaded file entity.</returns>
         public async Task<FileEntity> UploadFileAsync(IFormFile file, string fileName, string? fileDate, string? fileDescription)
         {
-            // Validate input before proceeding
-            FileUtils.ValidateFile(file, fileName, _dbContext);
+            if (file == null)
+                throw new ArgumentNullException(nameof(file), "Uploaded file cannot be null.");
 
-            // Read the file content and prepare the base64-encoded version
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("File name cannot be empty.", nameof(fileName));
+
+            // Ensure validation is awaited
+            await FileUtils.ValidateFileAsync(file, fileName, _dbContext);
+
+            // Read the file content and generate the base64-encoded version
             var (fileContent, base64FileContent) = await FileUtils.ReadFileContentAsync(file);
 
-            // Prepare the entity before inserting it into the database
+            // Create the file entity with validated data
             var fileEntity = new FileEntity
             {
-                Name = fileName.Trim(), // Trim to remove extra spaces
-                FileName = file.FileName,
+                Name = fileName.Trim(),
+                FileName = Path.GetFileName(file.FileName), // Ensures no path traversal attacks
                 FileType = file.ContentType,
                 FileSize = file.Length,
                 FileContent = fileContent,
                 FileContentBase64 = base64FileContent,
-                Description = fileDescription?.Trim(), // Optionally trim the description
-                UploadDate = FileUtils.ParseFileDate(fileDate) // Parse the date string to a DateTime object
+                Description = fileDescription?.Trim(),
+                UploadDate = FileUtils.ParseFileDate(fileDate)
             };
 
-            // Securely save to the database
-            _dbContext.Files.Add(fileEntity);
-            await _dbContext.SaveChangesAsync(); // Save the changes to the database
+            // Securely save the entity to the database
+            await _dbContext.Files.AddAsync(fileEntity);
+            await _dbContext.SaveChangesAsync();
 
-            return fileEntity; // Return the uploaded file entity
+            return fileEntity;
         }
 
         /// <summary>
         /// Retrieves a list of all stored files.
         /// </summary>
+        /// <returns>A list of <see cref="FileEntity"/> objects.</returns>
         public async Task<List<FileEntity>> GetFilesAsync()
         {
-            // Return all files from the database without tracking changes
             return await _dbContext.Files.AsNoTracking().ToListAsync();
         }
 
         /// <summary>
-        /// Retrieves a paginated list of stored files based on page and page size.
+        /// Retrieves a paginated list of stored files.
         /// </summary>
+        /// <param name="page">The page number (1-based).</param>
+        /// <param name="pageSize">The number of files per page.</param>
+        /// <returns>A paginated list of <see cref="FileEntity"/> objects.</returns>
         public async Task<List<FileEntity>> GetFilesAsync(int page, int pageSize)
         {
-            // Perform pagination using Skip (to skip files from previous pages) and Take (to limit the number of files per page)
+            if (page < 1) page = 1; // Ensure page number is at least 1
+            if (pageSize <= 0) pageSize = 10; // Default to 10 if invalid size
+
             return await _dbContext.Files
-                .Skip((page - 1) * pageSize) // Skip files for previous pages
-                .Take(pageSize) // Take the specified number of files for the current page
-                .AsNoTracking() // Do not track changes (improves performance for read-only operations)
-                .ToListAsync(); // Execute the query and return the results as a list
+                .OrderBy(f => f.UploadDate) // Ensure consistent ordering
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }

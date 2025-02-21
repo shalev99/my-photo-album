@@ -22,7 +22,7 @@ namespace PictureAlbum.API.Controllers
             try
             {
                 var fileEntity = await _fileService.UploadFileAsync(File, fileName, fileDate, fileDescription);
-                return Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName ,fileEntity.FileContentBase64,fileEntity.FileType});
+                return Ok(new { fileEntity.Id, fileEntity.Name, fileEntity.FileName, fileEntity.FileContentBase64, fileEntity.FileType });
             }
             catch (Exception ex)
             {
@@ -30,7 +30,7 @@ namespace PictureAlbum.API.Controllers
             }
         }
 
-       [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetFiles([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -44,5 +44,18 @@ namespace PictureAlbum.API.Controllers
             }
         }
 
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllFiles()
+        {
+            try
+            {
+                var files = await _fileService.GetFilesAsync();
+                return Ok(files);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving all files", Error = ex.Message });
+            }
+        }
     }
 }
